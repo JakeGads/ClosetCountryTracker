@@ -13,10 +13,11 @@ This is a Next.js web application built with TypeScript and Tailwind CSS for fin
 
 ## Key Features
 - Coordinate input validation
-- Distance calculation between coordinates and country centers
-- Country flag display
+- Advanced distance calculation using multiple border points per country (not just center points)
+- Country flag display with Google Maps integration
 - Responsive design
 - Error handling for invalid inputs
+- Geolocation support for current location
 
 ## Development Guidelines
 - Follow Next.js best practices

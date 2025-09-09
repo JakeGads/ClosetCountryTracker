@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import { countries } from '@/data/countries';
-import { calculateDistance, validateCoordinates } from '@/utils/distance';
+import { calculateDistance, validateCoordinates, calculateMinDistanceToCountry } from '@/utils/distance';
 import { CountryResult } from '@/components/CountryResult';
 
 interface ClosestCountry {
@@ -38,16 +38,16 @@ export default function Home() {
       return;
     }
 
-    // Calculate distances to all countries
+    // Calculate distances to all countries using border points
     const countriesWithDistances = countries.map(country => ({
       country,
-      distance: calculateDistance(lat, lon, country.latitude, country.longitude)
+      distance: calculateMinDistanceToCountry(lat, lon, country)
     }));
 
     // Sort by distance and take the closest 5
     const closest = countriesWithDistances
       .sort((a, b) => a.distance - b.distance)
-      .slice(0, 10);
+      .slice(0, 5);
 
     setResults(closest);
     setIsLoading(false);
@@ -84,7 +84,7 @@ export default function Home() {
           </div>
           <h1 className="text-4xl font-bold text-gray-900 mb-2">Closest Countries Finder</h1>
           <p className="text-lg text-gray-600">
-            Enter your coordinates to find the 5 closest countries with their flags
+            Enter your coordinates to find the closest countries based on distance to their borders
           </p>
         </header>
 
@@ -157,7 +157,7 @@ export default function Home() {
           {results.length > 0 && (
             <div className="bg-white rounded-xl shadow-lg p-8">
               <h2 className="text-2xl font-bold text-gray-900 mb-6">
-                10 Closest Countries
+                5 Closest Countries
               </h2>
               <div className="space-y-4">
                 {results.map((result, index) => (

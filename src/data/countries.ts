@@ -1,8 +1,9 @@
 export interface Country {
   name: string;
   code: string; // ISO 3166-1 alpha-2 code for flags
-  latitude: number;
-  longitude: number;
+  latitude: number; // Center point latitude (for display)
+  longitude: number; // Center point longitude (for display)
+  borderPoints?: Array<{ lat: number; lng: number }>; // Multiple border points for distance calculation
 }
 
 export const countries: Country[] = [
@@ -35,7 +36,37 @@ export const countries: Country[] = [
   { name: "Burundi", code: "BI", latitude: -3.373056, longitude: 29.918886 },
   { name: "Cambodia", code: "KH", latitude: 12.565679, longitude: 104.990963 },
   { name: "Cameroon", code: "CM", latitude: 7.369722, longitude: 12.354722 },
-  { name: "Canada", code: "CA", latitude: 56.130366, longitude: -106.346771 },
+  { 
+    name: "Canada", 
+    code: "CA", 
+    latitude: 56.130366, 
+    longitude: -106.346771,
+    borderPoints: [
+      // Arctic
+      { lat: 83.1139, lng: -75.7667 }, // Ellesmere Island
+      { lat: 78.9167, lng: -103.75 }, // Banks Island
+      { lat: 69.5348, lng: -133.0482 }, // Arctic coast
+      // Alaska border
+      { lat: 69.6472, lng: -141.0033 },
+      { lat: 60.0000, lng: -141.0033 },
+      // West Coast
+      { lat: 54.3578, lng: -130.3200 }, // BC coast
+      { lat: 49.3829, lng: -123.2944 }, // Vancouver
+      { lat: 48.9994, lng: -124.7842 }, // US border
+      // Prairies/US border
+      { lat: 49.0000, lng: -95.1544 },
+      { lat: 49.0000, lng: -123.0000 },
+      // Great Lakes
+      { lat: 46.5197, lng: -84.3364 },
+      { lat: 45.0000, lng: -74.7097 },
+      // East Coast
+      { lat: 47.0379, lng: -65.7421 }, // New Brunswick
+      { lat: 46.8139, lng: -71.2080 }, // Quebec
+      { lat: 51.9253, lng: -55.6066 }, // Newfoundland
+      // Hudson Bay
+      { lat: 58.7669, lng: -94.1692 }
+    ]
+  },
   { name: "Cape Verde", code: "CV", latitude: 16.002082, longitude: -24.013197 },
   { name: "Central African Republic", code: "CF", latitude: 6.611111, longitude: 20.939444 },
   { name: "Chad", code: "TD", latitude: 15.454166, longitude: 18.732207 },
@@ -113,7 +144,33 @@ export const countries: Country[] = [
   { name: "Marshall Islands", code: "MH", latitude: 7.131474, longitude: 171.184478 },
   { name: "Mauritania", code: "MR", latitude: 21.00789, longitude: -10.940835 },
   { name: "Mauritius", code: "MU", latitude: -20.348404, longitude: 57.552152 },
-  { name: "Mexico", code: "MX", latitude: 23.634501, longitude: -102.552784 },
+  { 
+    name: "Mexico", 
+    code: "MX", 
+    latitude: 23.634501, 
+    longitude: -102.552784,
+    borderPoints: [
+      // US Border
+      { lat: 32.5387, lng: -114.7939 }, // Tijuana area
+      { lat: 31.7619, lng: -106.4850 }, // Juarez area  
+      { lat: 25.8378, lng: -97.3958 }, // Matamoros area
+      // Gulf Coast
+      { lat: 21.1619, lng: -97.2438 }, // Veracruz
+      { lat: 18.5014, lng: -88.2963 }, // Yucatan
+      // Caribbean/Belize border
+      { lat: 18.4954, lng: -88.2963 },
+      { lat: 17.8157, lng: -88.2963 },
+      // Guatemala border
+      { lat: 17.8157, lng: -92.2292 },
+      { lat: 14.5389, lng: -92.2292 },
+      // Pacific Coast
+      { lat: 14.5389, lng: -92.2292 }, // Chiapas
+      { lat: 16.8531, lng: -99.8237 }, // Acapulco
+      { lat: 20.2085, lng: -105.2573 }, // Puerto Vallarta
+      { lat: 24.1426, lng: -110.3128 }, // Cabo
+      { lat: 32.6297, lng: -117.0835 } // Tijuana
+    ]
+  },
   { name: "Micronesia", code: "FM", latitude: 7.425554, longitude: 150.550812 },
   { name: "Moldova", code: "MD", latitude: 47.411631, longitude: 28.369885 },
   { name: "Monaco", code: "MC", latitude: 43.750298, longitude: 7.412841 },
@@ -190,7 +247,40 @@ export const countries: Country[] = [
   { name: "Ukraine", code: "UA", latitude: 48.379433, longitude: 31.16558 },
   { name: "United Arab Emirates", code: "AE", latitude: 23.424076, longitude: 53.847818 },
   { name: "United Kingdom", code: "GB", latitude: 55.378051, longitude: -3.435973 },
-  { name: "United States", code: "US", latitude: 37.09024, longitude: -95.712891 },
+  { 
+    name: "United States", 
+    code: "US", 
+    latitude: 37.09024, 
+    longitude: -95.712891,
+    borderPoints: [
+      // Alaska
+      { lat: 64.0685, lng: -152.2782 },
+      { lat: 67.5, lng: -141.0 }, // Alaska-Canada border
+      // West Coast
+      { lat: 48.9994, lng: -124.7842 }, // Washington
+      { lat: 45.6387, lng: -124.0428 }, // Oregon
+      { lat: 41.7509, lng: -124.2026 }, // California
+      { lat: 32.5347, lng: -117.1347 }, // San Diego
+      // Mexico border
+      { lat: 32.5387, lng: -114.7939 }, // Arizona
+      { lat: 31.7619, lng: -106.4850 }, // Texas
+      { lat: 25.8378, lng: -97.3958 }, // Texas Gulf
+      // Gulf Coast
+      { lat: 29.7255, lng: -93.2273 }, // Louisiana
+      { lat: 30.3960, lng: -87.8967 }, // Alabama
+      { lat: 25.2866, lng: -80.8987 }, // Florida Keys
+      // East Coast
+      { lat: 25.7823, lng: -80.2994 }, // Miami
+      { lat: 35.2271, lng: -75.7723 }, // Outer Banks
+      { lat: 40.7589, lng: -73.9851 }, // New York
+      { lat: 44.8097, lng: -66.9517 }, // Maine
+      // Great Lakes
+      { lat: 48.9951, lng: -95.1544 }, // Minnesota
+      { lat: 46.5197, lng: -84.3364 }, // Michigan
+      // Center points
+      { lat: 39.8283, lng: -98.5795 }
+    ]
+  },
   { name: "Uruguay", code: "UY", latitude: -32.522779, longitude: -55.765835 },
   { name: "Uzbekistan", code: "UZ", latitude: 41.377491, longitude: 64.585262 },
   { name: "Vanuatu", code: "VU", latitude: -15.376706, longitude: 166.959158 },
