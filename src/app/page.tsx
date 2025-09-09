@@ -47,7 +47,7 @@ export default function Home() {
     // Sort by distance and take the closest 5
     const closest = countriesWithDistances
       .sort((a, b) => a.distance - b.distance)
-      .slice(0, 5);
+      .slice(0, 10);
 
     setResults(closest);
     setIsLoading(false);
@@ -157,7 +157,7 @@ export default function Home() {
           {results.length > 0 && (
             <div className="bg-white rounded-xl shadow-lg p-8">
               <h2 className="text-2xl font-bold text-gray-900 mb-6">
-                5 Closest Countries
+                10 Closest Countries
               </h2>
               <div className="space-y-4">
                 {results.map((result, index) => (
