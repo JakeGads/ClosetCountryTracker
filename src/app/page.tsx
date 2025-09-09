@@ -1,103 +1,188 @@
-import Image from "next/image";
+'use client';
+
+import { useState } from 'react';
+import { countries } from '@/data/countries';
+import { calculateDistance, validateCoordinates } from '@/utils/distance';
+import { CountryResult } from '@/components/CountryResult';
+
+interface ClosestCountry {
+  country: typeof countries[0];
+  distance: number;
+}
 
 export default function Home() {
-  return (
-    <div className="font-sans grid grid-rows-[20px_1fr_20px] items-center justify-items-center min-h-screen p-8 pb-20 gap-16 sm:p-20">
-      <main className="flex flex-col gap-[32px] row-start-2 items-center sm:items-start">
-        <Image
-          className="dark:invert"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={180}
-          height={38}
-          priority
-        />
-        <ol className="font-mono list-inside list-decimal text-sm/6 text-center sm:text-left">
-          <li className="mb-2 tracking-[-.01em]">
-            Get started by editing{" "}
-            <code className="bg-black/[.05] dark:bg-white/[.06] font-mono font-semibold px-1 py-0.5 rounded">
-              src/app/page.tsx
-            </code>
-            .
-          </li>
-          <li className="tracking-[-.01em]">
-            Save and see your changes instantly.
-          </li>
-        </ol>
+  const [latitude, setLatitude] = useState<string>('');
+  const [longitude, setLongitude] = useState<string>('');
+  const [results, setResults] = useState<ClosestCountry[]>([]);
+  const [error, setError] = useState<string>('');
+  const [isLoading, setIsLoading] = useState<boolean>(false);
 
-        <div className="flex gap-4 items-center flex-col sm:flex-row">
-          <a
-            className="rounded-full border border-solid border-transparent transition-colors flex items-center justify-center bg-foreground text-background gap-2 hover:bg-[#383838] dark:hover:bg-[#ccc] font-medium text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5 sm:w-auto"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className="dark:invert"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={20}
-              height={20}
-            />
-            Deploy now
-          </a>
-          <a
-            className="rounded-full border border-solid border-black/[.08] dark:border-white/[.145] transition-colors flex items-center justify-center hover:bg-[#f2f2f2] dark:hover:bg-[#1a1a1a] hover:border-transparent font-medium text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5 w-full sm:w-auto md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Read our docs
-          </a>
-        </div>
-      </main>
-      <footer className="row-start-3 flex gap-[24px] flex-wrap items-center justify-center">
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/file.svg"
-            alt="File icon"
-            width={16}
-            height={16}
-          />
-          Learn
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/window.svg"
-            alt="Window icon"
-            width={16}
-            height={16}
-          />
-          Examples
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/globe.svg"
-            alt="Globe icon"
-            width={16}
-            height={16}
-          />
-          Go to nextjs.org →
-        </a>
-      </footer>
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setError('');
+    setIsLoading(true);
+
+    const lat = parseFloat(latitude);
+    const lon = parseFloat(longitude);
+
+    // Validate input
+    if (isNaN(lat) || isNaN(lon)) {
+      setError('Please enter valid numbers for latitude and longitude.');
+      setIsLoading(false);
+      return;
+    }
+
+    if (!validateCoordinates(lat, lon)) {
+      setError('Please enter valid coordinates (latitude: -90 to 90, longitude: -180 to 180).');
+      setIsLoading(false);
+      return;
+    }
+
+    // Calculate distances to all countries
+    const countriesWithDistances = countries.map(country => ({
+      country,
+      distance: calculateDistance(lat, lon, country.latitude, country.longitude)
+    }));
+
+    // Sort by distance and take the closest 5
+    const closest = countriesWithDistances
+      .sort((a, b) => a.distance - b.distance)
+      .slice(0, 5);
+
+    setResults(closest);
+    setIsLoading(false);
+  };
+
+  const handleGetCurrentLocation = () => {
+    if (navigator.geolocation) {
+      setIsLoading(true);
+      navigator.geolocation.getCurrentPosition(
+        (position) => {
+          setLatitude(position.coords.latitude.toString());
+          setLongitude(position.coords.longitude.toString());
+          setIsLoading(false);
+        },
+        (error) => {
+          setError('Unable to get your location. Please enter coordinates manually.');
+          setIsLoading(false);
+        }
+      );
+    } else {
+      setError('Geolocation is not supported by this browser.');
+    }
+  };
+
+  return (
+    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100">
+      <div className="container mx-auto px-4 py-8 max-w-4xl">
+        <header className="text-center mb-12">
+          <div className="inline-flex items-center justify-center w-16 h-16 bg-blue-600 text-white rounded-full mb-4">
+            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-8 h-8">
+              <path strokeLinecap="round" strokeLinejoin="round" d="M15 10.5a3 3 0 1 1-6 0 3 3 0 0 1 6 0Z" />
+              <path strokeLinecap="round" strokeLinejoin="round" d="M19.5 10.5c0 7.142-7.5 11.25-7.5 11.25S4.5 17.642 4.5 10.5a7.5 7.5 0 1 1 15 0Z" />
+            </svg>
+          </div>
+          <h1 className="text-4xl font-bold text-gray-900 mb-2">Closest Countries Finder</h1>
+          <p className="text-lg text-gray-600">
+            Enter your coordinates to find the 5 closest countries with their flags
+          </p>
+        </header>
+
+        <main>
+          <div className="bg-white rounded-xl shadow-lg p-8 mb-8">
+            <form onSubmit={handleSubmit} className="space-y-6">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div>
+                  <label htmlFor="latitude" className="block text-sm font-medium text-gray-700 mb-2">
+                    Latitude
+                  </label>
+                  <input
+                    type="number"
+                    id="latitude"
+                    step="any"
+                    value={latitude}
+                    onChange={(e) => setLatitude(e.target.value)}
+                    placeholder="e.g., 40.7128"
+                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    required
+                  />
+                  <p className="text-xs text-gray-500 mt-1">Range: -90 to 90</p>
+                </div>
+                
+                <div>
+                  <label htmlFor="longitude" className="block text-sm font-medium text-gray-700 mb-2">
+                    Longitude
+                  </label>
+                  <input
+                    type="number"
+                    id="longitude"
+                    step="any"
+                    value={longitude}
+                    onChange={(e) => setLongitude(e.target.value)}
+                    placeholder="e.g., -74.0060"
+                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    required
+                  />
+                  <p className="text-xs text-gray-500 mt-1">Range: -180 to 180</p>
+                </div>
+              </div>
+
+              {error && (
+                <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg">
+                  {error}
+                </div>
+              )}
+
+              <div className="flex flex-col sm:flex-row gap-4">
+                <button
+                  type="submit"
+                  disabled={isLoading}
+                  className="flex-1 bg-blue-600 text-white py-3 px-6 rounded-lg font-medium hover:bg-blue-700 focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                >
+                  {isLoading ? 'Calculating...' : 'Find Closest Countries'}
+                </button>
+                
+                <button
+                  type="button"
+                  onClick={handleGetCurrentLocation}
+                  disabled={isLoading}
+                  className="sm:flex-none bg-gray-100 text-gray-700 py-3 px-6 rounded-lg font-medium hover:bg-gray-200 focus:ring-2 focus:ring-gray-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                >
+                  Use My Location
+                </button>
+              </div>
+            </form>
+          </div>
+
+          {results.length > 0 && (
+            <div className="bg-white rounded-xl shadow-lg p-8">
+              <h2 className="text-2xl font-bold text-gray-900 mb-6">
+                5 Closest Countries
+              </h2>
+              <div className="space-y-4">
+                {results.map((result, index) => (
+                  <CountryResult
+                    key={result.country.code}
+                    country={result.country}
+                    distance={result.distance}
+                    rank={index + 1}
+                  />
+                ))}
+              </div>
+              
+              <div className="mt-6 pt-6 border-t border-gray-200">
+                <p className="text-sm text-gray-600 text-center">
+                  📍 Coordinates: {parseFloat(latitude).toFixed(4)}°, {parseFloat(longitude).toFixed(4)}°
+                </p>
+              </div>
+            </div>
+          )}
+        </main>
+
+        <footer className="text-center mt-12 text-gray-500 text-sm">
+          <p>Built with Next.js and Tailwind CSS • Flags from flagcdn.com</p>
+        </footer>
+      </div>
     </div>
   );
 }
