@@ -98,10 +98,15 @@ function getCountryRadius(countryName: string): number {
 export function calculateMinDistanceToCountry(
   userLat: number, 
   userLng: number, 
-  country: { name: string; latitude: number; longitude: number; borderPoints?: Array<{ lat: number; lng: number }> }
+  country: { name: string; latitude: number; longitude: number; geometry?: any }
 ): number {
-  // Generate border points if they don't exist
-  const borderPoints = country.borderPoints || generateBorderPoints(country.latitude, country.longitude, country.name);
+  // If the country has GeoJSON geometry, use it for more accurate distance calculation
+  if (country.geometry) {
+    return calculateDistanceToGeoJSONGeometry(userLat, userLng, country.geometry);
+  }
+  
+  // Fallback to generated border points
+  const borderPoints = generateBorderPoints(country.latitude, country.longitude, country.name);
   
   // Calculate distance to each border point and return the minimum
   let minDistance = Infinity;
@@ -114,4 +119,94 @@ export function calculateMinDistanceToCountry(
   }
   
   return minDistance;
+}
+
+/**
+ * Calculate distance from a point to a GeoJSON geometry
+ * For polygons, this calculates the distance to the nearest edge
+ */
+export function calculateDistanceToGeoJSONGeometry(
+  userLat: number,
+  userLng: number,
+  geometry: any
+): number {
+  try {
+    const turf = require('@turf/turf');
+    const userPoint = turf.point([userLng, userLat]);
+    
+    if (geometry.type === 'Polygon') {
+      // For polygon, calculate distance to the boundary
+      const polygon = turf.polygon(geometry.coordinates);
+      
+      // Check if point is inside the polygon
+      if (turf.booleanPointInPolygon(userPoint, polygon)) {
+        return 0; // If inside the country, distance is 0
+      }
+      
+      // Calculate distance to the polygon boundary
+      const boundary = turf.polygonToLine(polygon);
+      const distance = turf.pointToLineDistance(userPoint, boundary, { units: 'kilometers' });
+      return Math.round(distance * 100) / 100;
+      
+    } else if (geometry.type === 'MultiPolygon') {
+      let minDistance = Infinity;
+      
+      // Check each polygon in the MultiPolygon
+      for (const coordinates of geometry.coordinates) {
+        const polygon = turf.polygon(coordinates);
+        
+        // Check if point is inside any polygon
+        if (turf.booleanPointInPolygon(userPoint, polygon)) {
+          return 0; // If inside any part of the country, distance is 0
+        }
+        
+        // Calculate distance to this polygon's boundary
+        const boundary = turf.polygonToLine(polygon);
+        const distance = turf.pointToLineDistance(userPoint, boundary, { units: 'kilometers' });
+        
+        if (distance < minDistance) {
+          minDistance = distance;
+        }
+      }
+      
+      return Math.round(minDistance * 100) / 100;
+    }
+    
+    // Fallback for other geometry types
+    return calculateDistanceToGeometryPoints(userLat, userLng, geometry);
+    
+  } catch (error) {
+    console.warn('Error calculating GeoJSON distance, using fallback method:', error);
+    return calculateDistanceToGeometryPoints(userLat, userLng, geometry);
+  }
+}
+
+/**
+ * Fallback method to calculate distance to geometry points
+ */
+function calculateDistanceToGeometryPoints(
+  userLat: number,
+  userLng: number,
+  geometry: any
+): number {
+  let minDistance = Infinity;
+  
+  const processCoordinates = (coords: any): void => {
+    if (Array.isArray(coords) && coords.length >= 2 && typeof coords[0] === 'number') {
+      // This is a coordinate pair [lng, lat]
+      const distance = calculateDistance(userLat, userLng, coords[1], coords[0]);
+      if (distance < minDistance) {
+        minDistance = distance;
+      }
+    } else if (Array.isArray(coords)) {
+      // This is an array of coordinates, process recursively
+      coords.forEach(processCoordinates);
+    }
+  };
+  
+  if (geometry.coordinates) {
+    processCoordinates(geometry.coordinates);
+  }
+  
+  return minDistance === Infinity ? 0 : Math.round(minDistance * 100) / 100;
 }
