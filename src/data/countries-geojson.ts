@@ -6,13 +6,14 @@ export interface Country {
   latitude: number;
   longitude: number;
   geometry?: Geometry;
+  borderPoints?: Array<{ lat: number; lng: number }>; // Optional border points for more accurate distance calculation
 }
 
 export interface CountryGeoJSON extends Feature {
   properties: {
     name: string;
     code: string;
-    [key: string]: any;
+    [key: string]: unknown;
   };
   geometry: Polygon | MultiPolygon;
 }

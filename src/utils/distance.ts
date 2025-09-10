@@ -51,7 +51,7 @@ export function generateBorderPoints(centerLat: number, centerLng: number, count
   const points: Array<{ lat: number; lng: number }> = [];
   
   // Determine radius based on country size (rough approximation)
-  let radius = getCountryRadius(countryName);
+  const radius = getCountryRadius(countryName);
   
   // Generate 16 points around the center (every 22.5 degrees)
   for (let angle = 0; angle < 360; angle += 22.5) {
@@ -98,11 +98,25 @@ function getCountryRadius(countryName: string): number {
 export function calculateMinDistanceToCountry(
   userLat: number, 
   userLng: number, 
-  country: { name: string; latitude: number; longitude: number; geometry?: any }
+  country: { name: string; latitude: number; longitude: number; geometry?: unknown; borderPoints?: Array<{ lat: number; lng: number }> }
 ): number {
   // If the country has GeoJSON geometry, use it for more accurate distance calculation
   if (country.geometry) {
     return calculateDistanceToGeoJSONGeometry(userLat, userLng, country.geometry);
+  }
+  
+  // If the country has predefined border points, use those
+  if (country.borderPoints && country.borderPoints.length > 0) {
+    let minDistance = Infinity;
+    
+    for (const point of country.borderPoints) {
+      const distance = calculateDistance(userLat, userLng, point.lat, point.lng);
+      if (distance < minDistance) {
+        minDistance = distance;
+      }
+    }
+    
+    return minDistance;
   }
   
   // Fallback to generated border points
@@ -128,15 +142,18 @@ export function calculateMinDistanceToCountry(
 export function calculateDistanceToGeoJSONGeometry(
   userLat: number,
   userLng: number,
-  geometry: any
+  geometry: unknown
 ): number {
   try {
+    // eslint-disable-next-line @typescript-eslint/no-require-imports
     const turf = require('@turf/turf');
     const userPoint = turf.point([userLng, userLat]);
     
-    if (geometry.type === 'Polygon') {
+    const geom = geometry as { type: string; coordinates: unknown };
+    
+    if (geom.type === 'Polygon') {
       // For polygon, calculate distance to the boundary
-      const polygon = turf.polygon(geometry.coordinates);
+      const polygon = turf.polygon(geom.coordinates);
       
       // Check if point is inside the polygon
       if (turf.booleanPointInPolygon(userPoint, polygon)) {
@@ -148,12 +165,13 @@ export function calculateDistanceToGeoJSONGeometry(
       const distance = turf.pointToLineDistance(userPoint, boundary, { units: 'kilometers' });
       return Math.round(distance * 100) / 100;
       
-    } else if (geometry.type === 'MultiPolygon') {
+    } else if (geom.type === 'MultiPolygon') {
       let minDistance = Infinity;
       
       // Check each polygon in the MultiPolygon
-      for (const coordinates of geometry.coordinates) {
-        const polygon = turf.polygon(coordinates);
+      const coordinates = geom.coordinates as unknown[][];
+      for (const coords of coordinates) {
+        const polygon = turf.polygon(coords);
         
         // Check if point is inside any polygon
         if (turf.booleanPointInPolygon(userPoint, polygon)) {
@@ -187,11 +205,11 @@ export function calculateDistanceToGeoJSONGeometry(
 function calculateDistanceToGeometryPoints(
   userLat: number,
   userLng: number,
-  geometry: any
+  geometry: unknown
 ): number {
   let minDistance = Infinity;
   
-  const processCoordinates = (coords: any): void => {
+  const processCoordinates = (coords: unknown): void => {
     if (Array.isArray(coords) && coords.length >= 2 && typeof coords[0] === 'number') {
       // This is a coordinate pair [lng, lat]
       const distance = calculateDistance(userLat, userLng, coords[1], coords[0]);
@@ -204,8 +222,9 @@ function calculateDistanceToGeometryPoints(
     }
   };
   
-  if (geometry.coordinates) {
-    processCoordinates(geometry.coordinates);
+  const geom = geometry as { coordinates?: unknown };
+  if (geom.coordinates) {
+    processCoordinates(geom.coordinates);
   }
   
   return minDistance === Infinity ? 0 : Math.round(minDistance * 100) / 100;

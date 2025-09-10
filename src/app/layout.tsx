@@ -1,20 +1,36 @@
 import type { Metadata } from "next";
-import { Geist, Geist_Mono } from "next/font/google";
+import { Inter, JetBrains_Mono } from "next/font/google";
 import "./globals.css";
 
-const geistSans = Geist({
-  variable: "--font-geist-sans",
+const inter = Inter({
+  variable: "--font-inter",
   subsets: ["latin"],
+  display: "swap",
 });
 
-const geistMono = Geist_Mono({
-  variable: "--font-geist-mono",
+const jetbrainsMono = JetBrains_Mono({
+  variable: "--font-jetbrains-mono",
   subsets: ["latin"],
+  display: "swap",
 });
 
 export const metadata: Metadata = {
-  title: "Closest Countries Finder",
-  description: "Find the 5 closest countries to any coordinates with their flags and distances",
+  title: "🌍 Closest Countries Finder",
+  description: "Discover the nearest countries to any location on Earth with precise border-based distance calculations. Built with Next.js and advanced geospatial algorithms.",
+  keywords: ["countries", "distance", "geography", "coordinates", "geolocation", "travel", "maps"],
+  authors: [{ name: "Jake Gads", url: "https://github.com/jakegads" }],
+  creator: "Jake Gads",
+  openGraph: {
+    title: "🌍 Closest Countries Finder",
+    description: "Discover the nearest countries to any location on Earth",
+    type: "website",
+    locale: "en_US",
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "🌍 Closest Countries Finder",
+    description: "Discover the nearest countries to any location on Earth",
+  },
 };
 
 export default function RootLayout({
@@ -25,7 +41,7 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body
-        className={`${geistSans.variable} ${geistMono.variable} antialiased`}
+        className={`${inter.variable} ${jetbrainsMono.variable} font-sans antialiased`}
       >
         {children}
       </body>
